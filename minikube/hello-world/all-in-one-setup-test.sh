@@ -379,7 +379,7 @@ SERVNAME="service/hello-world-frontend"
 APPPORT="8090"
 CONSOLEPORT="8080"
 
-kubectl port-forward ${SERVNAME} ${APPPORT}:8080 -n ${NS} &
+kubectl port-forward --skip-headers=true ${SERVNAME} ${APPPORT}:8080 -n ${NS} &
 echo "Port Forward created for Frontend"
 
 CONURL=$(kubectl get service skupper-controller -n west -o jsonpath='http://{.spec.clusterIP}')
