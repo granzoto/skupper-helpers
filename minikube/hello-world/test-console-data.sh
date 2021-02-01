@@ -20,6 +20,37 @@ fi
 
 echo "Starting Console test"
 
+function test_console_available() {
+    echo -e "\n==========================================="
+    echo -e "==== Running test_console_available"
+    echo -e "==========================================="
+    echo "Checking is Skupper console is available"
+    curl -s --connect-timeout 10 ${CON_URL} 2>&1> /dev/null
+    if [ $? -ne 0 ]; then
+        echo "The console is not available at ${CON_URL}"
+        echo "Test test_console_available FAILED"
+        exit 1
+    fi
+    echo "Test test_console_available PASSED"
+    return 0
+}    
+
+
+function test_console_DATA_available() {
+    echo -e "\n==========================================="
+    echo -e "==== Running test_console_DATA_available"
+    echo -e "==========================================="
+    echo "Checking is /DATA is available on Skupper console"
+    CURLDATA=$(curl -s --connect-timeout 10 ${CON_URL}/DATA)
+    if echo $CURLDATA | grep -q "404"; then 
+        echo "The path ${CON_URL}/DATA is not available"
+        echo "Test test_console_DATA_available FAILED"
+        exit 1
+    fi
+    echo "Test test_console_available PASSED"
+    return 0
+}    
+
 function test_console_01() {
 
     echo -e "\n==========================================="
@@ -54,6 +85,7 @@ function test_console_01() {
     # Check if it has increased, but not check the exact value yet
     if [ ${REQ_NEW} -le ${REQ_OLD} ] || [ ${BIN_NEW} -le ${BIN_OLD} ] || [ ${BOUT_NEW} -le ${BOUT_OLD} ]; then
         echo "[Error 001] Data has not increased properly"
+        echo "Test test_console_01 FAILED"
         exit 1
     fi
     echo "Test PASSED"
@@ -100,12 +132,19 @@ function test_console_02() {
     # Check if the number of requests has increased by 5
     if [ ${REQ_NEW} -ne ${REQ_EXP} ]; then
         echo "[Error 001] Number of requests is incorrect"
+        echo "Test test_console_02 FAILED"
         exit 1
     fi
 
     echo "Test PASSED"
     return 0
 }
+
+# Test if the console is available/can be reached
+test_console_available
+
+# Test if the /DATA path is available in the console
+test_console_DATA_available
 
 # Test if the values have increased
 test_console_01
