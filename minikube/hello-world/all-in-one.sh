@@ -4,14 +4,14 @@
 ### Function : CheckDeploy 
 ###
 function checkDeploy() {
-  DEP=${1}
-  NS=${2}
-  EXISTS=$(kubectl get deployment ${DEP} --no-headers -n ${NS} 2> /dev/null| awk -F " " '{print $1}')
-  if [ "${EXISTS}" == "${DEP}" ]; then
-    echo "${DEP}"
-  else
-    echo ""
-  fi
+    DEP=${1}
+    NS=${2}
+    EXISTS=$(kubectl get deployment ${DEP} --no-headers -n ${NS} 2> /dev/null| awk -F " " '{print $1}')
+    if [ "${EXISTS}" == "${DEP}" ]; then
+        echo "${DEP}"
+    else
+        echo ""
+    fi
 }
 ###
 ###
@@ -22,14 +22,14 @@ function checkDeploy() {
 ### Function : CheckAvailable
 ###
 function checkAvailable() {
-  DEP=${1}
-  NS=${2}
-  AVAILABLE=$(kubectl get deployment ${DEP} --no-headers -n ${NS} 2> /dev/null| awk -F " " '{print $2}')
-  if [ "${AVAILABLE}" == "1/1" ]; then
-    echo "OK"
-  else
-    echo ""
-  fi
+    DEP=${1}
+    NS=${2}
+    AVAILABLE=$(kubectl get deployment ${DEP} --no-headers -n ${NS} 2> /dev/null| awk -F " " '{print $2}')
+    if [ "${AVAILABLE}" == "1/1" ]; then
+        echo "OK"
+    else
+        echo ""
+    fi
 }
 ###
 ###
@@ -40,14 +40,14 @@ function checkAvailable() {
 ### Function : CheckExposedSkupper
 ###
 function checkExposedSkupper() {
-  DEP=${1}
-  NS=${2}  
-  EXISTS=$(skupper list-exposed -n ${NS} | grep ${DEP} | grep port | awk -F " " '{print $1}')
-  if [ "${EXISTS}" == "${DEP}" ]; then
-    echo "${DEP}"
-  else
-    echo ""
-  fi
+    DEP=${1}
+    NS=${2}  
+    EXISTS=$(skupper list-exposed -n ${NS} | grep ${DEP} | grep port | awk -F " " '{print $1}')
+    if [ "${EXISTS}" == "${DEP}" ]; then
+        echo "${DEP}"
+    else
+        echo ""
+    fi
 }
 ###
 ###
@@ -58,14 +58,14 @@ function checkExposedSkupper() {
 ### Function : CheckExposedKubectl
 ###
 function checkExposedKubectl() {
-  DEP=${1}
-  NS=${2}  
-  EXISTS=$(kubectl get service ${DEP} --no-headers -n ${NS} | awk -F " " '{print $1}')
-  if [ "${EXISTS}" == "${DEP}" ]; then
-    echo "${DEP}"
-  else
-    echo ""
-  fi
+    DEP=${1}
+    NS=${2}  
+    EXISTS=$(kubectl get service ${DEP} --no-headers -n ${NS} | awk -F " " '{print $1}')
+    if [ "${EXISTS}" == "${DEP}" ]; then
+        echo "${DEP}"
+    else
+        echo ""
+    fi
 }
 ###
 ###
@@ -80,22 +80,35 @@ echo -e "****  Cleaning the house "
 echo -e "*******************************************************\n"
 TUNPID=$(ps aux | grep "minikube tunnel" | grep -v grep | awk -F " " '{print $2}')
 if [ "x${TUNPID}" != "x" ]; then 
-    echo "killing minikube tunnel with PID ${TUNPID}"; 
+    echo -e "\nkilling minikube tunnel with PID ${TUNPID}"; 
+    kill -9 ${TUNPID}
 fi
 
-echo "Stop skupper in west"
+APPFWDPID=$(ps aux | grep port-forward | grep 8090 | grep -v grep | awk -F " " '{print $2}')
+if [ "x${APPFWDPID}" != "x" ]; then 
+    echo -e "\nkilling Port-Forward for APP/Frontend with PID ${APPFWDPID}"; 
+    kill -9 ${APPFWDPID}
+fi
+
+#CONSOLEFWDPID=$(ps aux | grep port-forward | grep 8092 | grep -v grep | awk -F " " '{print $2}')
+#if [ "x${CONSOLEFWDPID}" != "x" ]; then 
+#    echo "killing Port-Forward for Console with PID ${CONSOLEFWDPID}"; 
+#    kill -9 ${CONSOLEFWDPID}
+#fi
+
+echo -e "\nStop skupper in west"
 skupper delete -n west
 echo "Delete the service hello-world-frontend"
 kubectl delete service/hello-world-frontend -n west
 echo "Delete the deployment hello-world-frontend"
 kubectl delete deployment/hello-world-frontend -n west
 
-echo "Stop skupper in east"
+echo -e "\nStop skupper in east"
 skupper delete -n east
 echo "Delete the deployment hello-world-backend"
 kubectl delete deployment/hello-world-backend -n east
 
-echo "Delete namespace west"
+echo -e "\nDelete namespace west"
 kubectl delete namespace west
 echo "Delete namespace east"
 kubectl delete namespace east 
@@ -130,26 +143,26 @@ export NS="west"
 CMDINIT=""
 MSGTUNNEL=""
 MSGCONSOLE=""
-echo "[WEST] Starting minikube tunnel before starting skupper"
-nohup minikube tunnel &
-echo "Wait 10 seconds for minikube tunel"
-sleep 10
+#echo "[WEST] Starting minikube tunnel before starting skupper"
+#nohup minikube tunnel &
+#echo "Wait 10 seconds for minikube tunel"
+#sleep 10
 
-CMDINIT="skupper init -n ${NS}"
+CMDINIT="skupper init --cluster-local -n ${NS}"
 if [ "${1}" == "console" ] || [ "${2}" == "console" ]; then
-  CMDINIT="${CMDINIT} --enable-console --console-auth unsecured"
-  MSGCONSOLE="Using --enable-console --console-auth unsecured"
+    CMDINIT="${CMDINIT} --enable-console --console-auth unsecured"
+    MSGCONSOLE="Using --enable-console --console-auth unsecured"
 fi    
 
 echo "[WEST] Check if skupper is already installed"
 skupper status -n ${NS}
 
 if [ "${?}" -eq 0 ]; then
-  echo "  => Skupper is already installed in this namespace"
+    echo "  => Skupper is already installed in this namespace"
 else
-  echo "  => Skupper is not installed in this namespace yet"
-  echo "  => Installing skupper ${MSGTUNNEL}${MSGCONSOLE}"
-  ${CMDINIT}
+    echo "  => Skupper is not installed in this namespace yet"
+    echo "  => Installing skupper ${MSGTUNNEL}${MSGCONSOLE}"
+    ${CMDINIT}
 fi  
 ###
 ### 
@@ -166,11 +179,11 @@ export NS="east"
 echo "[EAST] Check if skupper is already installed"
 skupper status -n ${NS}
 if [ "${?}" -eq 0 ]; then
-  echo "  => Skupper is already installed in this namespace"
+    echo "  => Skupper is already installed in this namespace"
 else
-  echo "  => Skupper is not installed in this namespace yet, installing it"
-  echo "    => Starting Skupper with --cluster-local option"
-  skupper init --cluster-local -n ${NS}
+    echo "  => Skupper is not installed in this namespace yet, installing it"
+    echo "    => Starting Skupper with --cluster-local option"
+    skupper init --cluster-local -n ${NS}
 fi  
 ###
 ### 
@@ -188,10 +201,10 @@ TOKENFILE=$(mktemp --tmpdir=/tmp skuppercon.XXX)
 echo "[WEST] Creating a conection token and storing it at ${TOKENFILE}"
 skupper connection-token ${TOKENFILE} -n ${NS}
 if [ ${?} == 0 ]; then
-  echo "  => Connection token created at ${TOKENFILE}"
+    echo "  => Connection token created at ${TOKENFILE}"
 else    
-  echo "  => Unable to create token at ${TOKENFILE}"
-  exit 1
+    echo "  => Unable to create token at ${TOKENFILE}"
+    exit 1
 fi
 
 echo -e "\n\n*******************************************************"
@@ -201,10 +214,10 @@ export NS="east"
 echo "[EAST] Conecting to remote skupper using the token stored at ${TOKENFILE}"
 skupper connect ${TOKENFILE} -n ${NS}
 if [ ${?} == 0 ]; then
-  echo "  => Connection created using token from ${TOKENFILE}"
+    echo "  => Connection created using token from ${TOKENFILE}"
 else    
-  echo "  => Unable to connect using token from ${TOKENFILE}"
-  exit 1
+    echo "  => Unable to connect using token from ${TOKENFILE}"
+    exit 1
 fi
 ###
 ### 
@@ -224,29 +237,29 @@ DEPIMAGE="quay.io/skupper/hello-world-frontend"
 echo "[WEST] Checking if the deployment ${DEPNAME} already exists"
 CHECKDEPLOY=$(checkDeploy ${DEPNAME} ${NS})
 if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
-  echo "  => Deployment ${DEPNAME} already exists"
+    echo "  => Deployment ${DEPNAME} already exists"
 else
-  echo "  => Deploying it"
-  kubectl create deployment ${DEPNAME} --image ${DEPIMAGE} -n ${NS}
-  CHECKDEPLOY=$(checkDeploy ${DEPNAME} ${NS})
-  if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
-    echo "    => Deployment ${DEPNAME} created"
-  else
-    echo "    => Unable to create Deployment ${DEPNAME}. Check it manually"
-    exit 1
-  fi     
+    echo "  => Deploying it"
+    kubectl create deployment ${DEPNAME} --image ${DEPIMAGE} -n ${NS}
+    CHECKDEPLOY=$(checkDeploy ${DEPNAME} ${NS})
+    if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
+        echo "    => Deployment ${DEPNAME} created"
+    else
+        echo "    => Unable to create Deployment ${DEPNAME}. Check it manually"
+        exit 1
+    fi     
 fi
 
 echo "[WEST] Checking f deployment ${DEPNAME} is available"
 for count in $(seq 3); do
-  CHECKAVAILABLE=$(checkAvailable ${DEPNAME} ${NS})
-  if [ "${CHECKAVAILABLE}" == "OK" ]; then
-    echo "  => Deployment ${DEPNAME} is available"
-    break 
-  else
-    echo "      ...Waiting 5 seconds..."
-    sleep 5
-  fi  
+    CHECKAVAILABLE=$(checkAvailable ${DEPNAME} ${NS})
+    if [ "${CHECKAVAILABLE}" == "OK" ]; then
+        echo "  => Deployment ${DEPNAME} is available"
+        break 
+    else
+        echo "      ...Waiting 5 seconds..."
+        sleep 5
+    fi  
 done
 ###
 ### 
@@ -266,28 +279,28 @@ DEPIMAGE="quay.io/skupper/hello-world-backend"
 echo "[EAST] Checking if the deployment ${DEPNAME} already exists"
 CHECKDEPLOY=$(checkDeploy ${DEPNAME} ${NS})
 if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
-  echo "  => Deployment ${DEPNAME} already exists"
+    echo "  => Deployment ${DEPNAME} already exists"
 else
-  echo "  => Deploying it"
-  kubectl create deployment ${DEPNAME} --image ${DEPIMAGE} -n ${NS}
-  CHECKDEPLOY=$(checkDeploy)
-  if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
-    echo "    => Deployment ${DEPNAME} created"
-  else
-    echo "    => Unable to create Deployment ${DEPNAME}. Check it manually"
-  fi     
+    echo "  => Deploying it"
+    kubectl create deployment ${DEPNAME} --image ${DEPIMAGE} -n ${NS}
+    CHECKDEPLOY=$(checkDeploy)
+    if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
+        echo "    => Deployment ${DEPNAME} created"
+    else
+        echo "    => Unable to create Deployment ${DEPNAME}. Check it manually"
+    fi     
 fi
 
 echo "[EAST] Checking f deployment ${DEPNAME} is available"
 for count in $(seq 3); do
-  CHECKAVAILABLE=$(checkAvailable ${DEPNAME} ${NS})
-  if [ "${CHECKAVAILABLE}" == "OK" ]; then
-    echo "  => Deployment ${DEPNAME} is available"
-    break 
-  else
-    echo "      ...Waiting 5 seconds..."
-    sleep 5
-  fi  
+    CHECKAVAILABLE=$(checkAvailable ${DEPNAME} ${NS})
+    if [ "${CHECKAVAILABLE}" == "OK" ]; then
+        echo "  => Deployment ${DEPNAME} is available"
+        break 
+    else
+        echo "      ...Waiting 5 seconds..."
+        sleep 5
+    fi  
 done
 ###
 ### 
@@ -309,16 +322,16 @@ PROTO="http"
 echo "[EAST] Checking if the deployment ${DEPNAME} is already exposed"
 CHECKDEPLOY=$(checkExposedSkupper ${DEPNAME} ${NS})
 if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
-  echo "  => Deployment ${DEPNAME} already exposed"
+    echo "  => Deployment ${DEPNAME} already exposed"
 else
-  echo "  => Exposing it"
-  skupper expose deployment ${DEPNAME} --port ${PORT} --protocol ${PROTO} -n ${NS}
-  CHECKEXPOSE=$(checkExposedSkupper ${DEPNAME} ${NS})
-  if [ "${CHECKEXPOSE}" == "${DEPNAME}" ]; then
-    echo "    => Deployment ${DEPNAME} exposed"
-  else
-    echo "    => Unable to expose Deployment ${DEPNAME}. Check it manually"
-  fi
+    echo "  => Exposing it"
+    skupper expose deployment ${DEPNAME} --port ${PORT} --protocol ${PROTO} -n ${NS}
+    CHECKEXPOSE=$(checkExposedSkupper ${DEPNAME} ${NS})
+    if [ "${CHECKEXPOSE}" == "${DEPNAME}" ]; then
+        echo "    => Deployment ${DEPNAME} exposed"
+    else
+        echo "    => Unable to expose Deployment ${DEPNAME}. Check it manually"
+    fi
 fi
 ###
 ### 
@@ -339,20 +352,44 @@ TYPE="LoadBalancer"
 echo "[WEST] Checking if the deployment ${DEPNAME} already exposed"
 CHECKDEPLOY=$(checkExposedKubectl ${DEPNAME} ${NS})
 if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
-  echo "  => Deployment ${DEPNAME} already exposed"
+    echo "  => Deployment ${DEPNAME} already exposed"
 else
-  echo "  => Exposing it"
-  kubectl expose deployment ${DEPNAME} --port ${PORT} --type ${TYPE} -n ${NS}
-  CHECKEXPOSE=$(checkExposedKubectl ${DEPNAME} ${NS})
-  if [ "${CHECKEXPOSE}" == "${DEPNAME}" ]; then
-    echo "    => Deployment ${DEPNAME} exposed"
-  else
-    echo "    => Unable to expose Deployment ${DEPNAME}. Check it manually"
-  fi
+    echo "  => Exposing it"
+    kubectl expose deployment ${DEPNAME} --port ${PORT} --type ${TYPE} -n ${NS}
+    CHECKEXPOSE=$(checkExposedKubectl ${DEPNAME} ${NS})
+    if [ "${CHECKEXPOSE}" == "${DEPNAME}" ]; then
+        echo "    => Deployment ${DEPNAME} exposed"
+    else
+        echo "    => Unable to expose Deployment ${DEPNAME}. Check it manually"
+    fi
 fi
 ###
 ### 
 ###
 
-echo "To test, access the application this way"
-echo "curl \$(kubectl get service hello-world-frontend -n west -o jsonpath='http://{.status.loadBalancer.ingress[0].ip}:8080/')"
+
+###
+### Create a port-forward to access the application / frontend 
+###
+echo -e "\n\n*******************************************************"
+echo -e "****  Create a port-forward to access the frontend"
+echo -e "*******************************************************\n"
+export NS="west"
+SERVNAME="service/hello-world-frontend"
+APPPORT="8090"
+CONSOLEPORT="8080"
+
+kubectl port-forward ${SERVNAME} ${APPPORT}:8080 -n ${NS} &
+echo "Port Forward created for Frontend"
+
+CONURL=$(kubectl get service skupper-controller -n west -o jsonpath='http://{.spec.clusterIP}')
+
+echo -e "\nYou can interact with the test this way : "
+echo "   To access the Frontend ==> curl http://0.0.0.0:${APPPORT}"
+
+if [ "${1}" == "console" ] || [ "${2}" == "console" ]; then
+    echo "   To access the Console  ==> curl ${CONURL}:${CONSOLEPORT}"
+fi  
+###
+### 
+###
