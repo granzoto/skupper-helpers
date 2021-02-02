@@ -1,5 +1,7 @@
 #!/bin/bash
 
+SKUPPERCMD="/usr/local/bin/skupper-0.4.0"
+
 ###
 ### Function : CheckDeploy 
 ###
@@ -42,7 +44,7 @@ function checkAvailable() {
 function checkExposedSkupper() {
     DEP=${1}
     NS=${2}  
-    EXISTS=$(skupper list-exposed -n ${NS} | grep ${DEP} | grep port | awk -F " " '{print $1}')
+    EXISTS=$(${SKUPPERCMD} list-exposed -n ${NS} | grep ${DEP} | grep port | awk -F " " '{print $1}')
     if [ "${EXISTS}" == "${DEP}" ]; then
         echo "${DEP}"
     else
@@ -97,14 +99,14 @@ fi
 #fi
 
 echo -e "\nStop skupper in west"
-skupper delete -n west
+${SKUPPERCMD} delete -n west
 echo "Delete the service hello-world-frontend"
 kubectl delete service/hello-world-frontend -n west
 echo "Delete the deployment hello-world-frontend"
 kubectl delete deployment/hello-world-frontend -n west
 
 echo -e "\nStop skupper in east"
-skupper delete -n east
+${SKUPPERCMD} delete -n east
 echo "Delete the deployment hello-world-backend"
 kubectl delete deployment/hello-world-backend -n east
 
@@ -148,14 +150,14 @@ MSGCONSOLE=""
 #echo "Wait 10 seconds for minikube tunel"
 #sleep 10
 
-CMDINIT="skupper init --cluster-local -n ${NS}"
+CMDINIT="${SKUPPERCMD} init --cluster-local -n ${NS}"
 if [ "${1}" == "console" ] || [ "${2}" == "console" ]; then
     CMDINIT="${CMDINIT} --enable-console --console-auth unsecured"
     MSGCONSOLE="Using --enable-console --console-auth unsecured"
 fi    
 
 echo "[WEST] Check if skupper is already installed"
-skupper status -n ${NS}
+${SKUPPERCMD} status -n ${NS}
 
 if [ "${?}" -eq 0 ]; then
     echo "  => Skupper is already installed in this namespace"
@@ -177,13 +179,13 @@ echo -e "****  Start Skupper in namespace East "
 echo -e "*******************************************************\n"
 export NS="east"
 echo "[EAST] Check if skupper is already installed"
-skupper status -n ${NS}
+${SKUPPERCMD} status -n ${NS}
 if [ "${?}" -eq 0 ]; then
     echo "  => Skupper is already installed in this namespace"
 else
     echo "  => Skupper is not installed in this namespace yet, installing it"
     echo "    => Starting Skupper with --cluster-local option"
-    skupper init --cluster-local -n ${NS}
+    ${SKUPPERCMD} init --cluster-local -n ${NS}
 fi  
 ###
 ### 
@@ -199,7 +201,7 @@ echo -e "*******************************************************\n"
 export NS="west"
 TOKENFILE=$(mktemp --tmpdir=/tmp skuppercon.XXX)
 echo "[WEST] Creating a conection token and storing it at ${TOKENFILE}"
-skupper connection-token ${TOKENFILE} -n ${NS}
+${SKUPPERCMD} connection-token ${TOKENFILE} -n ${NS}
 if [ ${?} == 0 ]; then
     echo "  => Connection token created at ${TOKENFILE}"
 else    
@@ -212,7 +214,7 @@ echo -e "****  Connecting to a remote Skupper"
 echo -e "*******************************************************\n"
 export NS="east"
 echo "[EAST] Conecting to remote skupper using the token stored at ${TOKENFILE}"
-skupper connect ${TOKENFILE} -n ${NS}
+${SKUPPERCMD} connect ${TOKENFILE} -n ${NS}
 if [ ${?} == 0 ]; then
     echo "  => Connection created using token from ${TOKENFILE}"
 else    
@@ -325,7 +327,7 @@ if [ "${CHECKDEPLOY}" == "${DEPNAME}" ]; then
     echo "  => Deployment ${DEPNAME} already exposed"
 else
     echo "  => Exposing it"
-    skupper expose deployment ${DEPNAME} --port ${PORT} --protocol ${PROTO} -n ${NS}
+    ${SKUPPERCMD} expose deployment ${DEPNAME} --port ${PORT} --protocol ${PROTO} -n ${NS}
     CHECKEXPOSE=$(checkExposedSkupper ${DEPNAME} ${NS})
     if [ "${CHECKEXPOSE}" == "${DEPNAME}" ]; then
         echo "    => Deployment ${DEPNAME} exposed"
