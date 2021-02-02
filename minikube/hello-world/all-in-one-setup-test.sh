@@ -155,14 +155,12 @@ if [ "${1}" == "console" ] || [ "${2}" == "console" ]; then
 fi    
 
 echo "[WEST] Check if skupper is already installed"
-skupper status -n ${NS}
-
-if [ "${?}" -eq 0 ]; then
-    echo "  => Skupper is already installed in this namespace"
-else
+if [[ "$(skupper status -n ${NS})" =~ 'Skupper is not enabled' ]]; then
     echo "  => Skupper is not installed in this namespace yet"
     echo "  => Installing skupper ${MSGTUNNEL}${MSGCONSOLE}"
     ${CMDINIT}
+else
+    echo "  => Skupper is already installed in this namespace"
 fi  
 ###
 ### 
@@ -177,13 +175,12 @@ echo -e "****  Start Skupper in namespace East "
 echo -e "*******************************************************\n"
 export NS="east"
 echo "[EAST] Check if skupper is already installed"
-skupper status -n ${NS}
-if [ "${?}" -eq 0 ]; then
-    echo "  => Skupper is already installed in this namespace"
-else
+if [[ "$(skupper status -n ${NS})" =~ 'Skupper is not enabled' ]]; then
     echo "  => Skupper is not installed in this namespace yet, installing it"
     echo "    => Starting Skupper with --cluster-local option"
     skupper init --cluster-local -n ${NS}
+else
+    echo "  => Skupper is already installed in this namespace"
 fi  
 ###
 ### 
@@ -199,7 +196,7 @@ echo -e "*******************************************************\n"
 export NS="west"
 TOKENFILE=$(mktemp --tmpdir=/tmp skuppercon.XXX)
 echo "[WEST] Creating a conection token and storing it at ${TOKENFILE}"
-skupper connection-token ${TOKENFILE} -n ${NS}
+skupper token create ${TOKENFILE} -n ${NS}
 if [ ${?} == 0 ]; then
     echo "  => Connection token created at ${TOKENFILE}"
 else    
@@ -212,7 +209,7 @@ echo -e "****  Connecting to a remote Skupper"
 echo -e "*******************************************************\n"
 export NS="east"
 echo "[EAST] Conecting to remote skupper using the token stored at ${TOKENFILE}"
-skupper connect ${TOKENFILE} -n ${NS}
+skupper link create ${TOKENFILE} -n ${NS}
 if [ ${?} == 0 ]; then
     echo "  => Connection created using token from ${TOKENFILE}"
 else    
