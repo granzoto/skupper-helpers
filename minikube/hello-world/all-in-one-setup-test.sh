@@ -90,11 +90,11 @@ if [ "x${APPFWDPID}" != "x" ]; then
     kill -9 ${APPFWDPID}
 fi
 
-#CONSOLEFWDPID=$(ps aux | grep port-forward | grep 8092 | grep -v grep | awk -F " " '{print $2}')
-#if [ "x${CONSOLEFWDPID}" != "x" ]; then 
-#    echo "killing Port-Forward for Console with PID ${CONSOLEFWDPID}"; 
-#    kill -9 ${CONSOLEFWDPID}
-#fi
+CONFWDPID=$(ps aux | grep port-forward | grep 8092 | grep -v grep | awk -F " " '{print $2}')
+if [ "x${CONFWDPID}" != "x" ]; then 
+    echo -e "\nkilling Port-Forward for Console with PID ${CONFWDPID}"; 
+    kill -9 ${CONFWDPID}
+fi
 
 echo -e "\nStop skupper in west"
 skupper delete -n west
@@ -374,18 +374,39 @@ echo -e "*******************************************************\n"
 export NS="west"
 SERVNAME="service/hello-world-frontend"
 APPPORT="8090"
-CONSOLEPORT="8080"
 
 kubectl port-forward --skip-headers=true ${SERVNAME} ${APPPORT}:8080 -n ${NS} &
 echo "Port Forward created for Frontend"
+###
+### 
+###
 
-CONURL=$(kubectl get service skupper-controller -n west -o jsonpath='http://{.spec.clusterIP}')
 
+###
+### Create a port-forward to access the console 
+###
+echo -e "\n\n*******************************************************"
+echo -e "****  Create a port-forward to access the console"
+echo -e "*******************************************************\n"
+export NS="west"
+SERVNAME="service/skupper-controller"
+CONPORT="8092"
+
+kubectl port-forward --skip-headers=true ${SERVNAME} ${CONPORT}:8080 -n ${NS} &
+echo "Port Forward created for Console"
+###
+### 
+###
+
+
+###
+### Final message 
+###
 echo -e "\nYou can interact with the test this way : "
 echo "   To access the Frontend ==> curl http://0.0.0.0:${APPPORT}"
 
 if [ "${1}" == "console" ] || [ "${2}" == "console" ]; then
-    echo "   To access the Console  ==> curl ${CONURL}:${CONSOLEPORT}"
+    echo "   To access the Console  ==> curl http://0.0.0.0:${CONPORT}"
 fi  
 ###
 ### 

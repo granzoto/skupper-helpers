@@ -53,18 +53,19 @@ function test_console_DATA_available() {
 
 function test_console_01() {
 
+    let REQ_OLD=0
+    let BIN_OLD=0
+    let BOUT_OLD=0
+
     echo -e "\n==========================================="
     echo -e "==== Running test_console_01"
     echo -e "==========================================="
     echo "Retrieving details from Skupper console"
-    DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
 
-    REQVALID=$(echo $DATA | jq '.requests')
-    if [[ ${REQVALID} = null ]]; then
-        let REQ_OLD=0
-        let BIN_OLD=0
-        let BOUT_OLD=0
-    else    
+    DATAFULL=$(curl -s ${CON_URL}/DATA)
+    REQVALID=$(echo ${DATAFULL} | jq -r '.services[].requests_received | select(.!=null)')
+    if [ "${REQVALID}" != "" ] && [ "${REQVALID}" != "[]" ]; then
+        DATA=$(echo ${DATAFULL} | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
         let REQ_OLD=$(echo $DATA | jq '.requests')
         let BIN_OLD=$(echo $DATA | jq '.bytes_in')
         let BOUT_OLD=$(echo $DATA | jq '.bytes_out')
@@ -77,7 +78,6 @@ function test_console_01() {
     curl -s ${APP_URL}
 
     echo "Retrieving details from Skupper console again"
-    DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
  
     DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
     let REQ_NEW=$(echo $DATA | jq '.requests')
@@ -101,18 +101,20 @@ function test_console_01() {
 }
 
 function test_console_02() {
+
+    let REQ_OLD=0
+    let BIN_OLD=0
+    let BOUT_OLD=0
+
     echo -e "\n==========================================="
     echo -e "==== Running test_console_02"
     echo -e "==========================================="
     echo "Retrieving details from Skupper console"
-    DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
 
-    REQVALID=$(echo $DATA | jq '.requests')
-    if [[ ${REQVALID} = null ]]; then
-        let REQ_OLD=0
-        let BIN_OLD=0
-        let BOUT_OLD=0
-    else    
+    DATAFULL=$(curl -s ${CON_URL}/DATA)
+    REQVALID=$(echo ${DATAFULL} | jq -r '.services[].requests_received | select(.!=null)')
+    if [ "${REQVALID}" != "" ] && [ "${REQVALID}" != "[]" ]; then
+        DATA=$(echo ${DATAFULL} | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
         let REQ_OLD=$(echo $DATA | jq '.requests')
         let BIN_OLD=$(echo $DATA | jq '.bytes_in')
         let BOUT_OLD=$(echo $DATA | jq '.bytes_out')
