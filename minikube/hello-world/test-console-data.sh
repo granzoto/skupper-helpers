@@ -58,10 +58,17 @@ function test_console_01() {
     echo -e "==========================================="
     echo "Retrieving details from Skupper console"
     DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
-    let REQ_OLD=$(echo $DATA | jq '.requests')
-    let BIN_OLD=$(echo $DATA | jq '.bytes_in')
-    let BOUT_OLD=$(echo $DATA | jq '.bytes_out')
 
+    REQVALID=$(echo $DATA | jq '.requests')
+    if [[ ${REQVALID} = null ]]; then
+        let REQ_OLD=0
+        let BIN_OLD=0
+        let BOUT_OLD=0
+    else    
+        let REQ_OLD=$(echo $DATA | jq '.requests')
+        let BIN_OLD=$(echo $DATA | jq '.bytes_in')
+        let BOUT_OLD=$(echo $DATA | jq '.bytes_out')
+    fi
     echo "Old Request  ==> ${REQ_OLD}"
     echo "Old BytesIN  ==> ${BIN_OLD}"
     echo "Old BytesOut ==> ${BOUT_OLD}"
@@ -71,10 +78,11 @@ function test_console_01() {
 
     echo "Retrieving details from Skupper console again"
     DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
+ 
+    DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
     let REQ_NEW=$(echo $DATA | jq '.requests')
     let BIN_NEW=$(echo $DATA | jq '.bytes_in')
     let BOUT_NEW=$(echo $DATA | jq '.bytes_out')
- 
     echo "New Request  ==> ${REQ_NEW}"
     echo "New BytesIN  ==> ${BIN_NEW}"
     echo "New BytesOut ==> ${BOUT_NEW}"
@@ -98,9 +106,17 @@ function test_console_02() {
     echo -e "==========================================="
     echo "Retrieving details from Skupper console"
     DATA=$(curl -s ${CON_URL}/DATA | jq '.services[].requests_received[].by_client[] | {"requests": .requests, "bytes_in": .bytes_in, "bytes_out": .bytes_out}')
-    let REQ_OLD=$(echo $DATA | jq '.requests')
-    let BIN_OLD=$(echo $DATA | jq '.bytes_in')
-    let BOUT_OLD=$(echo $DATA | jq '.bytes_out')
+
+    REQVALID=$(echo $DATA | jq '.requests')
+    if [[ ${REQVALID} = null ]]; then
+        let REQ_OLD=0
+        let BIN_OLD=0
+        let BOUT_OLD=0
+    else    
+        let REQ_OLD=$(echo $DATA | jq '.requests')
+        let BIN_OLD=$(echo $DATA | jq '.bytes_in')
+        let BOUT_OLD=$(echo $DATA | jq '.bytes_out')
+    fi
 
     echo "Old Request  ==> ${REQ_OLD}"
     echo "Old BytesIN  ==> ${BIN_OLD}"
